@@ -80,6 +80,8 @@ public class TwentyFour extends CanvasWatchFaceService {
 
         Bitmap mBackground;
         Paint mHandPaint;
+        float handMargin;
+
         boolean mAmbient;
         Time mTime;
 
@@ -131,10 +133,12 @@ public class TwentyFour extends CanvasWatchFaceService {
             Resources resources = TwentyFour.this.getResources();
 
             mHandPaint = new Paint();
-            mHandPaint.setColor(resources.getColor(R.color.analog_hands));
-            mHandPaint.setStrokeWidth(resources.getDimension(R.dimen.analog_hand_stroke));
+            mHandPaint.setColor(resources.getColor(R.color.hand));
+            mHandPaint.setStrokeWidth(resources.getDimension(R.dimen.hand_stroke));
             mHandPaint.setAntiAlias(true);
             mHandPaint.setStrokeCap(Paint.Cap.BUTT);
+
+            handMargin = resources.getDimension(R.dimen.hand_margin);
 
             mTime = new Time();
         }
@@ -160,20 +164,21 @@ public class TwentyFour extends CanvasWatchFaceService {
                 Canvas bgCanvas = new Canvas(mBackground);
                 Paint bgPaint = new Paint();
 
-                bgPaint.setColor(resources.getColor(R.color.analog_background));
+                bgPaint.setColor(resources.getColor(R.color.background));
                 bgCanvas.drawRect(0, 0, width, height, bgPaint); // draw BG color
 
                 bgPaint.setColor(resources.getColor(R.color.tick_mark));
-                bgPaint.setStrokeWidth(resources.getDimension(R.dimen.tick_mark_stroke));
+                bgPaint.setStrokeWidth(resources.getDimension(R.dimen.mark_stroke));
                 bgPaint.setStrokeCap(Paint.Cap.BUTT);
                 bgPaint.setAntiAlias(true);
 
                 float cx = width / 2f;
                 float cy = height / 2f;
 
-                float hourStart = cx - 18;
-                float minorStart = cx - 12;
-                float end = cx - 5;
+                float markMargin = resources.getDimension(R.dimen.mark_margin);
+                float hourStart = cx - resources.getDimension(R.dimen.mark_len_long) - markMargin;
+                float minorStart = cx - resources.getDimension(R.dimen.mark_len_short) - markMargin;
+                float end = cx - markMargin;
 
                 {
                     int i = 0;
@@ -242,7 +247,7 @@ public class TwentyFour extends CanvasWatchFaceService {
 
             float rot = ((mTime.hour + (mTime.minute / 60f) + (mTime.second / 60f / 60f)) / 12f)  * (float) Math.PI;
             rot += (float) Math.PI / 2f;
-            float length = centerX - 20;
+            float length = centerX - handMargin;
 
             float endX = (float) Math.cos(rot) * length;
             float endY = (float) Math.sin(rot) * length;
