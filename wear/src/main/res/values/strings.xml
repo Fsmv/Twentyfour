@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Twenty-Four</string>
+    <string name="my_analog_name">My Analog</string>
+    <string name="title_activity_twenty_four_configuration">Twenty-Four Configuration</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+</resources>
