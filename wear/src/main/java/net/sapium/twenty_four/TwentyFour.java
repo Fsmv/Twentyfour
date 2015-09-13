@@ -48,13 +48,16 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.text.format.Time;
+import android.util.Log;
 import android.view.SurfaceHolder;
+import android.view.WindowInsets;
 
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -82,6 +85,9 @@ public class TwentyFour extends CanvasWatchFaceService {
         Paint mHandPaint;
         float handMargin;
 
+        boolean mIsRound;
+        int mChinSize;
+        float mWidth, mHeight;
         boolean mAmbient;
         Time mTime;
 
@@ -140,6 +146,11 @@ public class TwentyFour extends CanvasWatchFaceService {
 
             handMargin = resources.getDimension(R.dimen.hand_margin);
 
+            if (Build.MODEL.equals("Moto 360")) {
+                mChinSize = 30;
+                mIsRound = true;
+            }
+
             mTime = new Time();
         }
 
@@ -150,9 +161,35 @@ public class TwentyFour extends CanvasWatchFaceService {
         }
 
         @Override
+        public void onApplyWindowInsets(WindowInsets insets) {
+            super.onApplyWindowInsets(insets);
+            mIsRound = insets.isRound();
+            if (!(mChinSize > 0)) {
+                mChinSize = insets.getSystemWindowInsetBottom();
+            }
+        }
+
+        @Override
         public void onPropertiesChanged(Bundle properties) {
             super.onPropertiesChanged(properties);
             mLowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false);
+        }
+
+        private float getScreenRadius(float angle) {
+            if (mChinSize == 0) {
+                return mWidth / 2f;
+            }
+
+            float chinRightAngle = (float) (Math.PI / 2f - Math.acos((mHeight / 2.0 - mChinSize) / (mWidth / 2.0)));
+            float chinLeftAngle = (float)Math.PI - chinRightAngle;
+
+            if (angle >= chinRightAngle && angle <= chinLeftAngle) {
+                float y = mHeight / 2f - mChinSize;
+                float x = y / (float) Math.tan(angle);
+                return (float) Math.sqrt(x * x + y * y);
+            } else {
+                return mWidth / 2f;
+            }
         }
 
         private void generateBackground(int width, int height) {
@@ -176,26 +213,27 @@ public class TwentyFour extends CanvasWatchFaceService {
                 float cy = height / 2f;
 
                 float markMargin = resources.getDimension(R.dimen.mark_margin);
-                float hourStart = cx - resources.getDimension(R.dimen.mark_len_long) - markMargin;
-                float minorStart = cx - resources.getDimension(R.dimen.mark_len_short) - markMargin;
-                float end = cx - markMargin;
+                float hourStartMargin = resources.getDimension(R.dimen.mark_len_long) + markMargin;
+                float minorStartMargin = resources.getDimension(R.dimen.mark_len_short) + markMargin;
 
                 {
-                    int i = 0;
+                    int i = 19*4; // rot == 0 is hour 19 and we have 1/4 hour increments
                     for (float rot = 0.0f; rot < 2f * (float) Math.PI;  rot += (float) Math.PI / 48f) {
-                        float start = minorStart;
+                        float r = getScreenRadius(rot);
+                        float end = r - markMargin;
+
+                        float start = r - minorStartMargin;
                         if (i % 4 == 0) {
-                            start = hourStart;
+                            start = r - hourStartMargin;
                         }
 
-
-                        float sinr = (float) Math.sin(rot + (float) Math.PI / 2f);
-                        float cosr = (float) Math.cos(rot + (float) Math.PI / 2f);
+                        float sinr = (float) Math.sin(rot);
+                        float cosr = (float) Math.cos(rot);
 
                         bgCanvas.drawLine(cx + cosr * start, cy + sinr * start,
                                           cx + cosr * end,   cy + sinr * end, bgPaint);
 
-                        i += 1;
+                        i = (i + 1) % (24*4); //24 hours in the day at 1/4 hour increments
                     }
                 }
             }
@@ -203,7 +241,9 @@ public class TwentyFour extends CanvasWatchFaceService {
 
         @Override
         public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            generateBackground(width, height);
+            mWidth = width;
+            mHeight = height;
+            generateBackground(width, height); // Must be after mWidth and mHeight are set
             super.onSurfaceChanged(holder, format, width, height);
         }
 
@@ -247,7 +287,7 @@ public class TwentyFour extends CanvasWatchFaceService {
 
             float rot = ((mTime.hour + (mTime.minute / 60f) + (mTime.second / 60f / 60f)) / 12f)  * (float) Math.PI;
             rot += (float) Math.PI / 2f;
-            float length = centerX - handMargin;
+            float length = getScreenRadius(rot) - handMargin;
 
             float endX = (float) Math.cos(rot) * length;
             float endY = (float) Math.sin(rot) * length;
