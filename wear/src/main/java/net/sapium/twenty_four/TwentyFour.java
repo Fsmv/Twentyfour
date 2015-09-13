@@ -287,7 +287,7 @@ public class TwentyFour extends CanvasWatchFaceService {
             float centerY = height / 2f;
 
             float rot = ((mTime.hour + (mTime.minute / 60f) + (mTime.second / 60f / 60f)) / 12f)  * (float) Math.PI;
-            rot += (float) Math.PI / 2f;
+            rot = (rot + (float) Math.PI / 2f) % (float)(Math.PI * 2f);
             float length = getScreenRadius(rot) - handMargin;
 
             float endX = (float) Math.cos(rot) * length;
