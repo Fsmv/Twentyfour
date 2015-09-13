@@ -217,8 +217,9 @@ public class TwentyFour extends CanvasWatchFaceService {
                 float minorStartMargin = resources.getDimension(R.dimen.mark_len_short) + markMargin;
 
                 {
-                    int i = 19*4; // rot == 0 is hour 19 and we have 1/4 hour increments
-                    for (float rot = 0.0f; rot < 2f * (float) Math.PI;  rot += (float) Math.PI / 48f) {
+                    float rot = 0; // tick 0 is 00:00 which is at the bottom
+                    for (int j = 0; j < 24 * 4; j += 1) {
+                        int i = (18 * 4 + j) % (24 * 4);
                         float r = getScreenRadius(rot);
                         float end = r - markMargin;
 
@@ -233,7 +234,7 @@ public class TwentyFour extends CanvasWatchFaceService {
                         bgCanvas.drawLine(cx + cosr * start, cy + sinr * start,
                                           cx + cosr * end,   cy + sinr * end, bgPaint);
 
-                        i = (i + 1) % (24*4); //24 hours in the day at 1/4 hour increments
+                        rot += (float) Math.PI / 48f;
                     }
                 }
             }
